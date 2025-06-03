@@ -20,6 +20,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import CommentsScreen from './screens/CommentsScreen';
 import ContributeScreen from './screens/ContributeScreen';
 import NotificationsScreen from './screens/NotificationsScreen'; // <-- IMPORT NotificationsScreen
+import AnimatedSplashScreen from './screens/AnimatedSplashScreen'; // Import the animated splash screen
 
 const RootStack = createStackNavigator(); // For the main app structure and modals
 const AuthStack = createStackNavigator(); // For Login/Signup
@@ -132,7 +133,7 @@ function MainAppTabNavigator() { // Renamed for clarity
         component={ProfileScreen}
         options={{
           title: 'My Profile',
-          headerShown: true,
+          headerShown: false,
           headerStyle: {
             backgroundColor: THEME_COLOR,
             elevation: Platform.OS === 'android' ? 2 : 0,
@@ -160,7 +161,7 @@ function AppRootStackNavigator() {
         name="ContributeProduct" 
         component={ContributeScreen}
         options={{
-          headerShown: false, 
+          headerShown: true, 
         }}
       />
       {/* === ADDED NOTIFICATIONS SCREEN DEFINITION HERE === */}
@@ -181,6 +182,7 @@ function AppRootStackNavigator() {
 export default function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true); // <-- Add this
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (authenticatedUser) => {
@@ -189,6 +191,13 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Handler to hide splash after animation
+  const handleSplashFinish = () => setShowSplash(false);
+
+  if (showSplash) {
+    return <AnimatedSplashScreen onFinish={handleSplashFinish} />;
+  }
 
   if (isLoading) {
     return (

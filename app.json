@@ -12,13 +12,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff",
       "plugins": [
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan products."
-        }
+        [
+          "expo-camera",
+          {
+            "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan products."
+          }
+        ]
       ]
-    ]
     },
     "ios": {
       "supportsTablet": true
@@ -28,10 +28,16 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.armancs211017.NutriScan"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b27b9a94-0b5d-4252-867f-b5da5a159379"
+      }
     }
   }
 }

@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, FlatList,
-  TouchableOpacity, StatusBar, Platform, Image
+  TouchableOpacity, StatusBar, Platform, Image, Alert // Added Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME_COLOR_PRIMARY as THEME_COLOR } from '../config/dummyData'; // Or your constants
 import { formatDistanceToNowStrict } from 'date-fns';
+import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
 // Dummy notifications data
 const DUMMY_NOTIFICATIONS = [
@@ -68,6 +69,8 @@ const getIconForNotificationType = (type) => {
 const NotificationsScreen = ({ navigation }) => {
   const [notifications, setNotifications] = useState(DUMMY_NOTIFICATIONS);
 
+  // REMOVE this useEffect block as we are using a custom header
+  /*
   useEffect(() => {
     navigation.setOptions({
       title: 'Notifications',
@@ -83,6 +86,7 @@ const NotificationsScreen = ({ navigation }) => {
     // Mark all as read when screen is opened (optional)
     // setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }, [navigation]);
+  */
 
   const handleNotificationPress = (item) => {
     console.log("Notification pressed:", item);
@@ -121,6 +125,7 @@ const NotificationsScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Kept for potential SectionList use, but FlatList is used in render for simplicity
   const groupNotificationsByDate = (notifs) => {
     const groups = { Today: [], Yesterday: [], Earlier: [] };
     const today = new Date();
@@ -146,30 +151,52 @@ const NotificationsScreen = ({ navigation }) => {
     .filter(section => section.data.length > 0);
 
 
-  if (notifications.length === 0) {
-    return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.emptyContainer}>
-                <Ionicons name="notifications-off-outline" size={70} color="#ccc" />
-                <Text style={styles.emptyText}>No Notifications Yet</Text>
-                <Text style={styles.emptySubText}>Check back later for updates!</Text>
-            </View>
-        </SafeAreaView>
-    )
-  }
-
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* StatusBar to style the actual status bar icons and background */}
       <StatusBar barStyle="light-content" backgroundColor={THEME_COLOR} />
-      <FlatList // Using FlatList instead of SectionList for simplicity with current grouping
-        data={notifications.sort((a,b) => b.timestamp - a.timestamp)} // Show newest first
-        renderItem={renderNotificationItem}
-        keyExtractor={(item) => item.id}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        contentContainerStyle={styles.listContainer}
-      />
+
+      {/* CUSTOM HEADER START */}
+      <LinearGradient
+        colors={THEME_COLOR ? [THEME_COLOR, '#00A040'] : ['#00C853', '#00A040']} // Use same gradient as Home
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerContainer} // Reuse headerContainer style (with fixed height 65)
+      >
+        {/* Back Button */}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
+        </TouchableOpacity>
+        {/* Title */}
+        <Text style={styles.headerTitle}>Notifications</Text>
+        {/* Right Placeholder (to balance the title) */}
+        <View style={styles.headerIconPlaceholder} />
+      </LinearGradient>
+      {/* CUSTOM HEADER END */}
+
+
+      {/* Main Content Area - Needs to take up the rest of the space */}
+      {notifications.length === 0 ? (
+        <View style={styles.emptyContainer}> {/* Added flex: 1 to this container */}
+            <Ionicons name="notifications-off-outline" size={70} color="#ccc" />
+            {/* --- Check for whitespace here --- */}
+            <Text style={styles.emptyText}>No Notifications Yet</Text>
+             {/* --- Check for whitespace here --- */}
+            <Text style={styles.emptySubText}>Check back later for updates!</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={notifications.sort((a,b) => b.timestamp - a.timestamp)} // Show newest first
+          renderItem={renderNotificationItem}
+          keyExtractor={(item) => item.id}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          contentContainerStyle={styles.listContainer} // Inner padding for content
+          style={{ flex: 1 }} // Make FlatList take available space
+        />
+      )}
       {/*
       // If you want SectionList for "Today", "Yesterday", "Earlier"
+      // Replace the above FlatList/empty check block with this:
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
@@ -179,7 +206,8 @@ const NotificationsScreen = ({ navigation }) => {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={styles.listContainer}
-        stickySectionHeadersEnabled={false}
+        stickySectionHeadersEnabled={false} // Or true if you want headers to stick
+        style={{ flex: 1 }} // Make SectionList take available space
       />
       */}
     </SafeAreaView>
@@ -191,8 +219,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F6F8',
   },
+  // Reusing Header Styles from HomeScreen - Ensure height is 65 here too
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 65, // <--- Match the height from HomeScreen
+    paddingHorizontal: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  headerIconPlaceholder: { // Keep this for symmetry
+    width: 30, // Should match the expected width of the back button area
+  },
+  headerTitle: { // Reuse title style
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    // textAlign: 'center', // Not needed with space-between and placeholder
+  },
+  backButton: { // Style for the touchable area of the back button
+    padding: 5, // Gives a little extra touchable area
+    width: 30, // Set width to match the placeholder roughly
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // End Reused Header Styles
+
   listContainer: {
     paddingVertical: 10,
+    // flexGrow: 1, // Use flexGrow on contentContainerStyle for centering empty state
   },
   sectionHeader: {
     fontSize: 16,
@@ -253,12 +312,11 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: '#EDF2F7',
-    // marginLeft: 70, // Align with text if icon is on left
   },
   emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      flex: 1, // Make empty container take available space below header
+      justifyContent: 'center', // Center vertically
+      alignItems: 'center', // Center horizontally
       paddingHorizontal: 30,
   },
   emptyText: {

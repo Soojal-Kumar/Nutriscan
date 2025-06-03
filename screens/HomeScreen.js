@@ -295,9 +295,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row', // To allow items side-by-side
     justifyContent: 'space-between', // Pushes title to center, icons to sides
     alignItems: 'center', // Vertical alignment
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 8 : 15,
-    paddingBottom: 18,
-    paddingHorizontal: 15, // Horizontal padding for the whole header
+    // *** CHANGES MADE HERE: Removed dynamic padding, Added fixed height ***
+    height: 60, // <--- Set your desired fixed height here (e.g., 55, 56, 60)
+    // paddingTop and paddingBottom removed
+    // *** END CHANGES ***
+
+    paddingHorizontal: 15, // Keep horizontal padding for content
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -343,7 +346,7 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     paddingHorizontal: 15,
     paddingTop: 20,
-    paddingBottom: Platform.OS === 'ios' ? 100 : 80,
+    paddingBottom: Platform.OS === 'ios' ? 100 : 80, // Keep padding bottom for scroll view content
     alignItems: 'center',
   },
   searchBarContainer: {
@@ -477,7 +480,7 @@ const styles = StyleSheet.create({
   },
   closeModalButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 55 : 25,
+    top: Platform.OS === 'ios' ? 60 : 25, // Adjusted slightly for fixed height header
     right: 20,
     backgroundColor: 'rgba(0,0,0,0.4)',
     borderRadius: 20,

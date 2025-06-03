@@ -190,7 +190,7 @@ const ContributeScreen = ({ navigation, route }) => {
                 placeholderTextColor="#A9A9A9"
                 keyboardType="numeric"
             />
-            {/* <TouchableOpacity style={styles.scanBarcodeButton} onPress={() => {/* Implement barcode scan here */}}>
+            {/* <TouchableOpacity style={styles.scanBarcodeButton} onPress={() => {/* Implement barcode scan here */}
             {/*    <Ionicons name="barcode-outline" size={24} color={THEME_COLOR} />
             {/*</TouchableOpacity> */}
           </View>

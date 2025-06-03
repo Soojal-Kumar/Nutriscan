@@ -2,13 +2,17 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  SafeAreaView, StatusBar, Platform, Alert, ActivityIndicator,
+  SafeAreaView, StatusBar, Platform, Alert, ActivityIndicator, Image, // Import Image
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Firebase imports
 import { auth } from '../config/firebase'; // Import from your config
 import { signInWithEmailAndPassword } from 'firebase/auth';
+
+// Assuming your logo is in the assets folder one level up from screens
+// Adjust the path '../assets/nutri-scan-logo.png' if your file structure is different
+const logo = require('../assets/nutri-scan-logo.png');
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -33,6 +37,8 @@ const LoginScreen = ({ navigation }) => {
         errorMessage = 'Invalid email or password.';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/too-many-requests') {
+         errorMessage = 'Too many failed login attempts. Please try again later.';
       }
       Alert.alert("Login Error", errorMessage);
     } finally {
@@ -44,6 +50,14 @@ const LoginScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.container}>
+
+        {/* Logo added here */}
+        <Image
+          source={logo}
+          style={styles.logo}
+          resizeMode="contain" // Or 'cover', 'stretch', 'repeat', 'center'
+        />
+
         <Text style={styles.title}>Login</Text>
         <Text style={styles.subtitle}>Please enter your credential</Text>
 
@@ -56,6 +70,7 @@ const LoginScreen = ({ navigation }) => {
           autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
+          editable={!isLoading} // Disable input while loading
         />
 
         <Text style={styles.inputLabel}>Password</Text>
@@ -67,12 +82,13 @@ const LoginScreen = ({ navigation }) => {
             secureTextEntry={!showPassword}
             value={password}
             onChangeText={setPassword}
+            editable={!isLoading} // Disable input while loading
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon} disabled={isLoading}>
             <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={24} color="#888" />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => Alert.alert("Forgot Password", "Forgot password functionality to be implemented.")}>
+        <TouchableOpacity onPress={() => Alert.alert("Forgot Password", "Forgot password functionality to be implemented.")} disabled={isLoading}>
           <Text style={styles.forgotPassword}>Forgot Password?</Text>
         </TouchableOpacity>
 
@@ -90,7 +106,7 @@ const LoginScreen = ({ navigation }) => {
 
         <View style={styles.signupPrompt}>
           <Text style={styles.signupText}>You don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Signup')} disabled={isLoading}>
             <Text style={styles.signupLink}>Signup</Text>
           </TouchableOpacity>
         </View>
@@ -99,11 +115,16 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-// Keep all your existing styles and add:
+// Keep all your existing styles and add the 'logo' style
 const styles = StyleSheet.create({
-  // ... (your existing styles from previous LoginScreen.js)
   safeArea: { flex: 1, backgroundColor: '#fff' },
-  container: { flex: 1, paddingHorizontal: 30, justifyContent: 'center', backgroundColor: '#fff' },
+  container: { flex: 1, paddingHorizontal: 30, justifyContent: 'center', backgroundColor: '#fff', paddingBottom: 20 }, // Added paddingBottom for safety
+  logo: {
+    width: 150, // Adjust size as needed
+    height: 150, // Adjust size as needed
+    alignSelf: 'center', // Center the image
+    marginBottom: 30, // Space between logo and title
+  },
   title: { fontSize: 32, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 10 },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 40 },
   inputLabel: { fontSize: 14, color: '#333', marginBottom: 5, alignSelf: 'flex-start' },

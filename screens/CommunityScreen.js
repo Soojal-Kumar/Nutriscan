@@ -10,12 +10,21 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { db, auth } from '../config/firebase';
 import {
   collection, query, orderBy, onSnapshot, doc, getDoc,
-  updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, // Added deleteDoc
+  updateDoc, arrayUnion, arrayRemove, increment, deleteDoc,
 } from 'firebase/firestore';
 import PostCard from '../components/PostCard'; // Make sure this path is correct
-import { THEME_COLOR, LOGO_URL, PLACEHOLDER_AVATAR } from '../config/constants';
+import { THEME_COLOR_PRIMARY as THEME_COLOR, LOGO_URL, PLACEHOLDER_AVATAR } from '../config/constants'; // Assuming these are in constants
+import { LinearGradient } from 'expo-linear-gradient'; // <-- Import LinearGradient
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// --- Ensure you have LOGO_URL and PLACEHOLDER_AVATAR defined in your constants file ---
+// Example in config/constants.js:
+// export const THEME_COLOR_PRIMARY = '#2ECC71';
+// export const LOGO_URL = 'https://via.placeholder.com/150/0000FF/FFFFFF?text=LOGO'; // Replace with actual logo URL
+// export const PLACEHOLDER_AVATAR = 'https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User'; // Replace with actual placeholder URL
+// ----------------------------------------------------------------------------------
+
 
 const CommunityScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,14 +33,19 @@ const CommunityScreen = ({ navigation }) => {
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [deletingPostId, setDeletingPostId] = useState(null); // For loading on specific post deletion
+  const [deletingPostId, setDeletingPostId] = useState(null);
 
   const currentUserId = auth.currentUser ? auth.currentUser.uid : null;
 
-  const filteredPosts = posts.filter(post =>
-    post.text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPosts = posts.filter(post => {
+    const text = typeof post.text === 'string' ? post.text : '';
+    const username = typeof post.username === 'string' ? post.username : '';
+    const query = searchQuery.trim().toLowerCase();
+    return (
+      text.toLowerCase().includes(query) ||
+      username.toLowerCase().includes(query)
+    );
+  });
 
   const fetchCurrentUserProfile = useCallback(async () => {
     if (auth.currentUser) {
@@ -42,10 +56,29 @@ const CommunityScreen = ({ navigation }) => {
           setCurrentUserProfile(docSnap.data());
         } else {
           console.warn("[CommunityScreen] Current user profile not found in Firestore.");
+           // Set a default profile state if doc doesn't exist, prevents errors later
+           setCurrentUserProfile({
+               username: 'Anonymous', // Or some default
+               avatarUrl: PLACEHOLDER_AVATAR,
+               // ... other default fields
+           });
         }
       } catch (error) {
         console.error("[CommunityScreen] Error fetching user profile:", error);
+         // Set a default profile state on error too
+         setCurrentUserProfile({
+               username: 'Error Loading', // Or some default
+               avatarUrl: PLACEHOLDER_AVATAR,
+               // ... other default fields
+           });
       }
+    } else {
+         // Set default profile state if no user logged in
+         setCurrentUserProfile({
+               username: 'Not Logged In',
+               avatarUrl: PLACEHOLDER_AVATAR,
+               // ... other default fields
+           });
     }
   }, []);
 
@@ -56,7 +89,7 @@ const CommunityScreen = ({ navigation }) => {
     const postsCollectionRef = collection(db, 'posts');
     const q = query(postsCollectionRef, orderBy('createdAt', 'desc'));
 
-    if (posts.length === 0) { // Only set initial loading if posts are empty
+    if (posts.length === 0) {
         setIsLoading(true);
     }
     console.log("[CommunityScreen] Setting up posts listener.");
@@ -81,14 +114,14 @@ const CommunityScreen = ({ navigation }) => {
         console.log("[CommunityScreen] Unsubscribing from posts listener.");
         unsubscribe();
     };
-  }, []); // Removed dependencies that might cause re-subscriptions unnecessarily, let onRefresh handle explicit re-fetch logic for profile
+  }, []); // Removed dependencies that might cause re-subscriptions unnecessarily
+
 
   const onRefresh = useCallback(() => {
     console.log("[CommunityScreen] Refresh triggered.");
     setRefreshing(true);
-    fetchCurrentUserProfile(); // Refresh user profile
-    // The onSnapshot listener for posts will automatically update.
-    // setRefreshing(false) is handled within the onSnapshot callback.
+    fetchCurrentUserProfile();
+    // onSnapshot will handle updating posts, setting refreshing(false) when done.
   }, [fetchCurrentUserProfile]);
 
 
@@ -97,7 +130,7 @@ const CommunityScreen = ({ navigation }) => {
         Alert.alert("Login Required", "Please log in to create a post.");
         return;
     }
-    if (!currentUserProfile || !currentUserProfile.username) { // Check for username as a proxy for complete profile
+    if (!currentUserProfile || !currentUserProfile.username || currentUserProfile.username === 'Anonymous' || currentUserProfile.username === 'Error Loading' || currentUserProfile.username === 'Not Logged In') {
         Alert.alert("Profile Incomplete", "Please complete your profile (especially username) before posting.", [
             { text: "OK" },
             { text: "Go to Profile", onPress: () => navigation.navigate('Profile') }
@@ -129,7 +162,7 @@ const CommunityScreen = ({ navigation }) => {
         Alert.alert("Login Required", "Please log in to view or add comments.");
         return;
     }
-    if (!currentUserProfile || !currentUserProfile.username) {
+     if (!currentUserProfile || !currentUserProfile.username || currentUserProfile.username === 'Anonymous' || currentUserProfile.username === 'Error Loading' || currentUserProfile.username === 'Not Logged In') {
         Alert.alert("Profile Incomplete", "Please complete your profile (especially username) before commenting.", [
             { text: "OK" },
             { text: "Go to Profile", onPress: () => navigation.navigate('Profile') }
@@ -148,9 +181,9 @@ const CommunityScreen = ({ navigation }) => {
 
   const handleSharePress = async (postText, postId) => {
     try {
-      const appName = "YourAppName"; // Replace with your app's name
+      const appName = "NutriScan"; // Replace with your app's name
       const result = await Share.share({
-        message: `${postText}\n\nShared from ${appName} (View post: yourapp://post/${postId})`,
+        message: `${postText}\n\nShared from ${appName}`,
         title: 'Check out this post!',
       });
       if (result.action === Share.sharedAction) {
@@ -168,49 +201,85 @@ const CommunityScreen = ({ navigation }) => {
       Alert.alert("Not Logged In", "You need to be logged in to delete posts.");
       return;
     }
-    // Ensure only the author can initiate delete from client, though rules enforce it
     const postToDelete = posts.find(p => p.id === postIdToDelete);
     if (postToDelete && postToDelete.userId !== currentUserId) {
         Alert.alert("Permission Denied", "You can only delete your own posts.");
         return;
     }
 
-    setDeletingPostId(postIdToDelete);
-    console.log(`[CommunityScreen] Attempting to delete post: ${postIdToDelete}`);
-    try {
-      const postRef = doc(db, "posts", postIdToDelete);
-      await deleteDoc(postRef);
-      // Alert.alert("Post Deleted", "Your post has been successfully deleted."); // Optional, UI update is often enough
-      console.log(`[CommunityScreen] Successfully deleted post: ${postIdToDelete}`);
-      // onSnapshot listener will update the posts list.
-      // NOTE: Subcollections (comments, etc.) are NOT automatically deleted.
-      // This requires a Firebase Cloud Function for proper cleanup in production.
-    } catch (error) {
-      console.error("[CommunityScreen] Error deleting post: ", error);
-      Alert.alert("Error", `Could not delete the post. ${error.message}`);
-    } finally {
-      setDeletingPostId(null);
-    }
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this post? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => console.log("Delete cancelled")
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingPostId(postIdToDelete);
+            console.log(`[CommunityScreen] Attempting to delete post: ${postIdToDelete}`);
+            try {
+              const postRef = doc(db, "posts", postIdToDelete);
+              await deleteDoc(postRef);
+              console.log(`[CommunityScreen] Successfully deleted post: ${postIdToDelete}`);
+              // onSnapshot listener will update the posts list.
+              // NOTE: Subcollections (comments, etc.) are NOT automatically deleted.
+              // This requires a Firebase Cloud Function for proper cleanup in production.
+            } catch (error) {
+              console.error("[CommunityScreen] Error deleting post: ", error);
+              Alert.alert("Error", `Could not delete the post. ${error.message}`);
+            } finally {
+              setDeletingPostId(null);
+            }
+          }
+        }
+      ]
+    );
   };
 
+
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <View style={styles.customHeader}>
-        <View style={styles.headerLeft}>
-          <Image source={{ uri: LOGO_URL }} style={styles.headerLogo} />
-          <Text style={styles.headerTitle}>COMMUNITY</Text>
+    // The outer headerContainer View can still hold shadows/elevation for the whole block
+    <View style={styles.headerContainerWrapper}>
+      {/* Wrap the TOP ROW content in LinearGradient */}
+      <LinearGradient
+        colors={THEME_COLOR ? [THEME_COLOR, '#00A040'] : ['#00C853', '#00A040']} // Same gradient
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerTopRow} // Apply fixed height and row layout here
+      >
+        {/* Header Left (Logo + Spacer) */}
+        <View style={styles.headerLeft}> {/* This view provides the left offset for centering */}
+          {/* Using Image component for network images */}
+           <Image
+            source={{ uri: LOGO_URL }}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          {/* <View style={{width: 10}} /> Optional spacer if logo margin not enough */}
         </View>
+
+        {/* Header Title (Centered) */}
+        <Text style={styles.headerTitle}>COMMUNITY</Text>
+
+        {/* Header Right (Profile Icon + Spacer) */}
         <TouchableOpacity
           onPress={() => navigation.navigate('Profile')}
-          style={styles.profileButton}
+          style={styles.profileButton} // This view provides the right offset for centering
         >
           <Image
             source={{ uri: currentUserProfile?.avatarUrl || PLACEHOLDER_AVATAR }}
             style={styles.headerProfileIcon}
+            resizeMode="cover"
           />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
+      {/* Search bar remains below the gradient header top row */}
       <View style={styles.searchContainer}>
         <View style={[
           styles.searchInputContainer,
@@ -253,15 +322,18 @@ const CommunityScreen = ({ navigation }) => {
           color="#E0E0E0"
         />
       </View>
+      {/* --- Check for whitespace here --- */}
       <Text style={styles.emptyTitle}>
         {searchQuery ? 'No posts found' : 'Welcome to the Community!'}
       </Text>
+      {/* --- Check for whitespace here --- */}
       <Text style={styles.emptySubtitle}>
         {searchQuery
           ? `We couldn't find any posts matching "${searchQuery}". Try a different search.`
           : 'Be the first to share your thoughts, ask questions, or connect with others.'
         }
       </Text>
+      {/* --- Check for whitespace here --- */}
       {!searchQuery && (
         <TouchableOpacity
           style={styles.emptyActionButton}
@@ -269,6 +341,7 @@ const CommunityScreen = ({ navigation }) => {
           activeOpacity={0.8}
         >
           <Ionicons name="add-circle-outline" size={22} color="#fff" style={styles.emptyActionIcon} />
+          {/* --- Check for whitespace here --- */}
           <Text style={styles.emptyActionText}>Create a New Post</Text>
         </TouchableOpacity>
       )}
@@ -279,10 +352,11 @@ const CommunityScreen = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
          <StatusBar barStyle="light-content" backgroundColor={THEME_COLOR} />
-        {renderHeader()} {/* Show header even during initial load for better UX */}
-        <View style={styles.loadingIndicatorContainer}>
+        {renderHeader()} {/* Show header even during initial load */}
+        <View style={styles.loadingIndicatorContainer}> {/* Make this container take space below header */}
           <ActivityIndicator size="large" color={THEME_COLOR} />
-          <Text style={styles.loadingText}>Loading posts...</Text>
+          {/* --- Check for whitespace here --- */}
+          <Text style={styles.loadingText}>Loading posts...说到做到!</Text>
         </View>
       </SafeAreaView>
     );
@@ -311,12 +385,13 @@ const CommunityScreen = ({ navigation }) => {
                   // navigation.navigate('UserProfileScreen', { userId, username });
                 }
               }}
-              onDeletePost={handleDeletePost} // Pass the delete handler
+              onDeletePost={handleDeletePost}
               navigation={navigation}
             />
             {deletingPostId === item.id && (
               <View style={styles.postDeletingOverlay}>
                 <ActivityIndicator color={'#fff'} size="small" />
+                 {/* --- Check for whitespace here --- */}
                 <Text style={styles.postDeletingText}>Deleting...</Text>
               </View>
             )}
@@ -328,7 +403,7 @@ const CommunityScreen = ({ navigation }) => {
           filteredPosts.length === 0 && styles.listContainerEmpty
         ]}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={!isLoading ? renderEmptyComponent : null} // Show empty only if not loading
+        ListEmptyComponent={!isLoading ? renderEmptyComponent : null}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -339,6 +414,7 @@ const CommunityScreen = ({ navigation }) => {
           />
         }
         ItemSeparatorComponent={() => <View style={styles.postSeparator} />}
+        style={{ flex: 1 }} // Make FlatList take available space below header
       />
       <TouchableOpacity
         style={styles.fab}
@@ -354,43 +430,38 @@ const CommunityScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F0F2F5',
+    backgroundColor: '#F0F2F5', // Consistent background color
   },
-  loadingIndicatorContainer: { // Centered loading for posts list
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  // This wrapper holds the gradient row and the search bar
+  headerContainerWrapper: {
+     elevation: 3, // Apply shadow/elevation to the whole header block
+     shadowColor: '#000',
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.1,
+     shadowRadius: 4,
+     backgroundColor: '#fff', // Background for the search area (visible under shadow)
   },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#555',
-  },
-  headerContainer: {
-    backgroundColor: '#fff',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  customHeader: {
+  // Style for the top row with gradient, logo, title, profile icon
+  headerTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    // justifyContent: 'space-between', // Removed space-between
     alignItems: 'center',
-    backgroundColor: THEME_COLOR,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 8 : 12,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+    height: 65, // Fixed height (match HomeScreen/Notifications)
+    paddingHorizontal: 16, // Horizontal padding inside the gradient bar
+    // Removed paddingTop and paddingBottom
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    // *** MODIFIED FOR CENTERING ***
+    width: 60, // Give the left container a fixed width (approx logo width + margin + padding)
+    justifyContent: 'flex-start', // Align logo to the start of its container
+    // *** END MODIFIED ***
   },
   headerLogo: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 16, // Make it round
     marginRight: 10,
   },
   headerTitle: {
@@ -398,22 +469,32 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 0.3,
+    // *** MODIFIED FOR CENTERING ***
+    flex: 1, // Allow title to take available space
+    textAlign: 'center', // Center the text within the available space
+    // Negative margin is often not needed when left/right containers are balanced
+    // marginLeft: -42, // <-- Try removing this or setting to 0
+    // *** END MODIFIED ***
   },
   profileButton: {
-    padding: 4,
+    padding: 4, // Increase touchable area
+    // *** MODIFIED FOR CENTERING ***
+    width: 60, // Give the right container a fixed width (approx profile icon width + padding)
+    alignItems: 'flex-end', // Align the profile icon to the right within its space
+    // *** END MODIFIED ***
   },
   headerProfileIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: '#fff',
+    borderRadius: 18, // Make it round
+    backgroundColor: '#fff', // Background if image fails
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: 'rgba(255,255,255,0.5)', // Light border
   },
   searchContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#fff', // Should match headerContainerWrapper background
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -446,6 +527,16 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 5,
   },
+  loadingIndicatorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#555',
+  },
   listContainer: {
     paddingHorizontal: 0,
     paddingTop: 8,
@@ -455,18 +546,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
   },
-  postCardWrapper: { // Wrapper for PostCard and its potential overlay
-    position: 'relative', // Needed for absolute positioning of overlay
+  postCardWrapper: {
+    position: 'relative',
   },
   postDeletingOverlay: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)', // Darker overlay for visibility
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8, // Match PostCard border radius
-    marginHorizontal: Platform.OS === 'ios' ? 0 : 5, // Match PostCard margin
-    marginBottom: 10, // Match PostCard margin
+    borderRadius: 8,
+    marginHorizontal: Platform.OS === 'ios' ? 0 : 5,
+    marginBottom: 10,
+    zIndex: 1,
   },
   postDeletingText: {
     marginTop: 8,
@@ -515,7 +607,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 3,
   },
   emptyActionIcon: {
@@ -528,20 +620,24 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: Platform.OS === 'ios' ? 30 : 25,
-    backgroundColor: THEME_COLOR,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    right: 24,
+    bottom: Platform.OS === 'ios' ? 90 : 70,
+    backgroundColor: '#00C853', // Solid green (NutriScan theme)
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    // iOS shadow
+    shadowColor: '#00C853', // Green shadow for a soft glow
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    // Android shadow
+    elevation: 10,
+    borderWidth: 0, // No border for a clean look
     zIndex: 1000,
   },
 });
+
 export default CommunityScreen;
