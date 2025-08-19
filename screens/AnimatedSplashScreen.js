@@ -5,7 +5,7 @@ import {
   StatusBar, Platform
 } from 'react-native';
 // We don't need CommonActions for navigation.replace
-// import { CommonActions } from '@react-navigation/native'; // Remove or comment out this import
+// import { CommonActions } from '@react-navigation/native'; // Remove or comment out this import if not used
 import { auth } from '../config/firebase'; // Import Firebase auth here
 
 // Import your logo - adjust the path based on where you saved nutri-scan-logo.png
@@ -20,46 +20,61 @@ const AnimatedSplashScreen = ({ onFinish }) => {
   useEffect(() => {
     console.log("[AnimatedSplashScreen] Component mounted. Starting animation.");
 
-    // Start the animation sequence
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateYAnim, {
-          toValue: -50, // Move up initially
-          duration: 800,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.spring(translateYAnim, {
-         toValue: 0, // Bounce back down slightly to a center-ish position
-         speed: 5,
-         bounciness: 8,
-         useNativeDriver: true,
-      }),
-      Animated.delay(1000), // Hold for 1 second
-      // Optional: Fade out the splash screen content
-      Animated.timing(fadeAnim, {
-         toValue: 0,
-         duration: 300,
-         useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Instead of navigation, call onFinish
-      if (onFinish) onFinish();
-    });
+    // IMPORTANT FIX: Introduce a slight delay using setTimeout(0) or requestAnimationFrame.
+    // This allows React Native's rendering engine to complete its initial layout
+    // for the Animated components before the animations start scheduling updates,
+    // which often resolves 'useInsertionEffect' warnings.
+    const animationStartDelay = setTimeout(() => {
+    // Alternatively, for more frame-accurate timing:
+    // const animationFrame = requestAnimationFrame(() => {
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 800,
+              easing: Easing.ease,
+              useNativeDriver: true,
+            }),
+            Animated.timing(translateYAnim, {
+              toValue: -50, // Move up initially
+              duration: 800,
+              easing: Easing.ease,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.spring(translateYAnim, {
+             toValue: 0, // Bounce back down slightly to a center-ish position
+             speed: 5, // Adjust speed/bounciness if needed
+             bounciness: 8,
+             useNativeDriver: true,
+          }),
+          Animated.delay(1000), // Hold for 1 second
+          // Optional: Fade out the splash screen content
+          Animated.timing(fadeAnim, {
+             toValue: 0,
+             duration: 300,
+             useNativeDriver: true,
+          }),
+        ]).start(() => {
+          // Instead of navigation, call onFinish
+          if (onFinish) onFinish();
+        });
+    }, 0); // A 0ms delay moves the animation start to the end of the current event loop.
+            // If the warning persists, you can try a very small value like 10ms.
 
-  }, [fadeAnim, translateYAnim, onFinish]); // Add dependencies
+    // Cleanup function: Clear the timeout if the component unmounts prematurely
+    return () => {
+        clearTimeout(animationStartDelay);
+        // If you used requestAnimationFrame: cancelAnimationFrame(animationFrame);
+    };
+
+  }, [fadeAnim, translateYAnim, onFinish]); // Add dependencies for useEffect
 
   return (
     <SafeAreaView style={styles.safeArea}>
        <StatusBar barStyle="light-content" backgroundColor={THEME_COLOR} />
-      <View style={[styles.container, {backgroundColor: '#ffffff' || '#00C853'}]}>
+      {/* Changed background color logic: Directly use THEME_COLOR or a fallback */}
+      <View style={[styles.container, {backgroundColor: THEME_COLOR || '#00C853'}]}>
         <Animated.Image
           source={logo}
           style={[

@@ -12,7 +12,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyD0Qg3b6O_6dN6qTua635AHu4ZREqoVx2o",
   authDomain: "nutriscan-adaad.firebaseapp.com",
   projectId: "nutriscan-adaad",
-  storageBucket: "nutriscan-adaad.appspot.com",
+  storageBucket: "nutriscan-adaad.firebasestorage.app",
   messagingSenderId: "1086096631944",
   appId: "1:1086096631944:web:592635928e2fd3c29c173d",
   measurementId: "G-DGD7895HYF"

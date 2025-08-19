@@ -12,19 +12,11 @@ import {
   collection, query, orderBy, onSnapshot, doc, getDoc,
   updateDoc, arrayUnion, arrayRemove, increment, deleteDoc,
 } from 'firebase/firestore';
-import PostCard from '../components/PostCard'; // Make sure this path is correct
-import { THEME_COLOR_PRIMARY as THEME_COLOR, LOGO_URL, PLACEHOLDER_AVATAR } from '../config/constants'; // Assuming these are in constants
-import { LinearGradient } from 'expo-linear-gradient'; // <-- Import LinearGradient
+import PostCard from '../components/PostCard';
+import { THEME_COLOR_PRIMARY as THEME_COLOR, LOGO_URL, PLACEHOLDER_AVATAR } from '../config/constants';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-// --- Ensure you have LOGO_URL and PLACEHOLDER_AVATAR defined in your constants file ---
-// Example in config/constants.js:
-// export const THEME_COLOR_PRIMARY = '#2ECC71';
-// export const LOGO_URL = 'https://via.placeholder.com/150/0000FF/FFFFFF?text=LOGO'; // Replace with actual logo URL
-// export const PLACEHOLDER_AVATAR = 'https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User'; // Replace with actual placeholder URL
-// ----------------------------------------------------------------------------------
-
 
 const CommunityScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,28 +48,22 @@ const CommunityScreen = ({ navigation }) => {
           setCurrentUserProfile(docSnap.data());
         } else {
           console.warn("[CommunityScreen] Current user profile not found in Firestore.");
-           // Set a default profile state if doc doesn't exist, prevents errors later
            setCurrentUserProfile({
-               username: 'Anonymous', // Or some default
+               username: 'Anonymous',
                avatarUrl: PLACEHOLDER_AVATAR,
-               // ... other default fields
            });
         }
       } catch (error) {
         console.error("[CommunityScreen] Error fetching user profile:", error);
-         // Set a default profile state on error too
          setCurrentUserProfile({
-               username: 'Error Loading', // Or some default
+               username: 'Error Loading',
                avatarUrl: PLACEHOLDER_AVATAR,
-               // ... other default fields
            });
       }
     } else {
-         // Set default profile state if no user logged in
          setCurrentUserProfile({
                username: 'Not Logged In',
                avatarUrl: PLACEHOLDER_AVATAR,
-               // ... other default fields
            });
     }
   }, []);
@@ -114,14 +100,13 @@ const CommunityScreen = ({ navigation }) => {
         console.log("[CommunityScreen] Unsubscribing from posts listener.");
         unsubscribe();
     };
-  }, []); // Removed dependencies that might cause re-subscriptions unnecessarily
+  }, []);
 
 
   const onRefresh = useCallback(() => {
     console.log("[CommunityScreen] Refresh triggered.");
     setRefreshing(true);
     fetchCurrentUserProfile();
-    // onSnapshot will handle updating posts, setting refreshing(false) when done.
   }, [fetchCurrentUserProfile]);
 
 
@@ -181,7 +166,7 @@ const CommunityScreen = ({ navigation }) => {
 
   const handleSharePress = async (postText, postId) => {
     try {
-      const appName = "NutriScan"; // Replace with your app's name
+      const appName = "NutriScan";
       const result = await Share.share({
         message: `${postText}\n\nShared from ${appName}`,
         title: 'Check out this post!',
@@ -225,10 +210,6 @@ const CommunityScreen = ({ navigation }) => {
             try {
               const postRef = doc(db, "posts", postIdToDelete);
               await deleteDoc(postRef);
-              console.log(`[CommunityScreen] Successfully deleted post: ${postIdToDelete}`);
-              // onSnapshot listener will update the posts list.
-              // NOTE: Subcollections (comments, etc.) are NOT automatically deleted.
-              // This requires a Firebase Cloud Function for proper cleanup in production.
             } catch (error) {
               console.error("[CommunityScreen] Error deleting post: ", error);
               Alert.alert("Error", `Could not delete the post. ${error.message}`);
@@ -243,33 +224,26 @@ const CommunityScreen = ({ navigation }) => {
 
 
   const renderHeader = () => (
-    // The outer headerContainer View can still hold shadows/elevation for the whole block
     <View style={styles.headerContainerWrapper}>
-      {/* Wrap the TOP ROW content in LinearGradient */}
       <LinearGradient
-        colors={THEME_COLOR ? [THEME_COLOR, '#00A040'] : ['#00C853', '#00A040']} // Same gradient
+        colors={THEME_COLOR ? [THEME_COLOR, '#00A040'] : ['#00C853', '#00A040']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.headerTopRow} // Apply fixed height and row layout here
+        style={styles.headerTopRow}
       >
-        {/* Header Left (Logo + Spacer) */}
-        <View style={styles.headerLeft}> {/* This view provides the left offset for centering */}
-          {/* Using Image component for network images */}
+        <View style={styles.headerLeft}>
            <Image
             source={{ uri: LOGO_URL }}
             style={styles.headerLogo}
             resizeMode="contain"
           />
-          {/* <View style={{width: 10}} /> Optional spacer if logo margin not enough */}
         </View>
 
-        {/* Header Title (Centered) */}
         <Text style={styles.headerTitle}>COMMUNITY</Text>
 
-        {/* Header Right (Profile Icon + Spacer) */}
         <TouchableOpacity
           onPress={() => navigation.navigate('Profile')}
-          style={styles.profileButton} // This view provides the right offset for centering
+          style={styles.profileButton}
         >
           <Image
             source={{ uri: currentUserProfile?.avatarUrl || PLACEHOLDER_AVATAR }}
@@ -279,7 +253,6 @@ const CommunityScreen = ({ navigation }) => {
         </TouchableOpacity>
       </LinearGradient>
 
-      {/* Search bar remains below the gradient header top row */}
       <View style={styles.searchContainer}>
         <View style={[
           styles.searchInputContainer,
@@ -322,18 +295,15 @@ const CommunityScreen = ({ navigation }) => {
           color="#E0E0E0"
         />
       </View>
-      {/* --- Check for whitespace here --- */}
       <Text style={styles.emptyTitle}>
         {searchQuery ? 'No posts found' : 'Welcome to the Community!'}
       </Text>
-      {/* --- Check for whitespace here --- */}
       <Text style={styles.emptySubtitle}>
         {searchQuery
           ? `We couldn't find any posts matching "${searchQuery}". Try a different search.`
           : 'Be the first to share your thoughts, ask questions, or connect with others.'
         }
       </Text>
-      {/* --- Check for whitespace here --- */}
       {!searchQuery && (
         <TouchableOpacity
           style={styles.emptyActionButton}
@@ -341,7 +311,6 @@ const CommunityScreen = ({ navigation }) => {
           activeOpacity={0.8}
         >
           <Ionicons name="add-circle-outline" size={22} color="#fff" style={styles.emptyActionIcon} />
-          {/* --- Check for whitespace here --- */}
           <Text style={styles.emptyActionText}>Create a New Post</Text>
         </TouchableOpacity>
       )}
@@ -352,10 +321,9 @@ const CommunityScreen = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
          <StatusBar barStyle="light-content" backgroundColor={THEME_COLOR} />
-        {renderHeader()} {/* Show header even during initial load */}
-        <View style={styles.loadingIndicatorContainer}> {/* Make this container take space below header */}
+        {renderHeader()}
+        <View style={styles.loadingIndicatorContainer}>
           <ActivityIndicator size="large" color={THEME_COLOR} />
-          {/* --- Check for whitespace here --- */}
           <Text style={styles.loadingText}>Loading posts...说到做到!</Text>
         </View>
       </SafeAreaView>
@@ -382,7 +350,6 @@ const CommunityScreen = ({ navigation }) => {
                   navigation.navigate('Profile');
                 } else {
                   Alert.alert("View Profile", `Tapped on ${username || 'user'}. Profile view coming soon!`);
-                  // navigation.navigate('UserProfileScreen', { userId, username });
                 }
               }}
               onDeletePost={handleDeletePost}
@@ -391,7 +358,6 @@ const CommunityScreen = ({ navigation }) => {
             {deletingPostId === item.id && (
               <View style={styles.postDeletingOverlay}>
                 <ActivityIndicator color={'#fff'} size="small" />
-                 {/* --- Check for whitespace here --- */}
                 <Text style={styles.postDeletingText}>Deleting...</Text>
               </View>
             )}
@@ -414,7 +380,8 @@ const CommunityScreen = ({ navigation }) => {
           />
         }
         ItemSeparatorComponent={() => <View style={styles.postSeparator} />}
-        style={{ flex: 1 }} // Make FlatList take available space below header
+        // FIX 2: Apply styles to the FlatList component itself
+        style={{ flex: 1, backgroundColor: '#F0F2F5' }}
       />
       <TouchableOpacity
         style={styles.fab}
@@ -427,74 +394,66 @@ const CommunityScreen = ({ navigation }) => {
   );
 };
 
+// --- CORRECTED STYLES ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F0F2F5', // Consistent background color
+    // FIX 1: Set the SafeAreaView background to the header color for a seamless status bar.
+    backgroundColor: THEME_COLOR,
   },
-  // This wrapper holds the gradient row and the search bar
   headerContainerWrapper: {
-     elevation: 3, // Apply shadow/elevation to the whole header block
+     elevation: 3,
      shadowColor: '#000',
      shadowOffset: { width: 0, height: 2 },
      shadowOpacity: 0.1,
      shadowRadius: 4,
-     backgroundColor: '#fff', // Background for the search area (visible under shadow)
+     backgroundColor: '#fff',
   },
-  // Style for the top row with gradient, logo, title, profile icon
   headerTopRow: {
     flexDirection: 'row',
-    // justifyContent: 'space-between', // Removed space-between
     alignItems: 'center',
-    height: 65, // Fixed height (match HomeScreen/Notifications)
-    paddingHorizontal: 16, // Horizontal padding inside the gradient bar
-    // Removed paddingTop and paddingBottom
+    height: 65, // Consistent fixed height
+    paddingHorizontal: 16,
   },
+  // --- ROBUST HEADER CENTERING STYLES ---
   headerLeft: {
-    flexDirection: 'row',
+    width: 60, // Fixed width for the left container
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    // *** MODIFIED FOR CENTERING ***
-    width: 60, // Give the left container a fixed width (approx logo width + margin + padding)
-    justifyContent: 'flex-start', // Align logo to the start of its container
-    // *** END MODIFIED ***
+    flexDirection: 'row',
   },
   headerLogo: {
     width: 32,
     height: 32,
-    borderRadius: 16, // Make it round
-    marginRight: 10,
+    borderRadius: 16,
   },
   headerTitle: {
+    flex: 1, // Let the title take available space
+    textAlign: 'center', // Center the text within its own container
     color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 0.3,
-    // *** MODIFIED FOR CENTERING ***
-    flex: 1, // Allow title to take available space
-    textAlign: 'center', // Center the text within the available space
-    // Negative margin is often not needed when left/right containers are balanced
-    // marginLeft: -42, // <-- Try removing this or setting to 0
-    // *** END MODIFIED ***
+    // REMOVED fragile negative margin
   },
   profileButton: {
-    padding: 4, // Increase touchable area
-    // *** MODIFIED FOR CENTERING ***
-    width: 60, // Give the right container a fixed width (approx profile icon width + padding)
-    alignItems: 'flex-end', // Align the profile icon to the right within its space
-    // *** END MODIFIED ***
+    width: 60, // Match left container's width for perfect balance
+    alignItems: 'flex-end',
+    padding: 4,
   },
   headerProfileIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18, // Make it round
-    backgroundColor: '#fff', // Background if image fails
+    borderRadius: 18,
+    backgroundColor: '#fff',
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)', // Light border
+    borderColor: 'rgba(255,255,255,0.5)',
   },
+  // --- END OF HEADER CENTERING STYLES ---
   searchContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff', // Should match headerContainerWrapper background
+    backgroundColor: '#fff',
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -531,6 +490,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F0F2F5', // Ensure loading view has correct background
   },
   loadingText: {
     marginTop: 10,
@@ -622,20 +582,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 24,
     bottom: Platform.OS === 'ios' ? 90 : 70,
-    backgroundColor: '#00C853', // Solid green (NutriScan theme)
+    backgroundColor: '#00C853',
     width: 56,
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    // iOS shadow
-    shadowColor: '#00C853', // Green shadow for a soft glow
+    shadowColor: '#00C853',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
-    // Android shadow
     elevation: 10,
-    borderWidth: 0, // No border for a clean look
+    borderWidth: 0,
     zIndex: 1000,
   },
 });
