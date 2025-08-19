@@ -2,6 +2,7 @@
   "expo": {
     "name": "NutriScan",
     "slug": "NutriScan",
+    "owner": "soojal24",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,16 +11,16 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff",
-      "plugins": [
-        [
-          "expo-camera",
-          {
-            "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan products."
-          }
-        ]
-      ]
+      "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan products."
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -29,14 +30,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.armancs211017.NutriScan"
+      "package": "com.armancs211017.NutriScan",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "geminiApiKey": "AIzaSyB4vpWDZtX7cEfK5bUaZVMfBlnLCxvUOTk",
       "eas": {
-        "projectId": "b27b9a94-0b5d-4252-867f-b5da5a159379"
+        "projectId": "fec2e057-e090-477c-a1d3-66cb89e1bcc6"
       }
     }
   }
