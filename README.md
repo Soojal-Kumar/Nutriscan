@@ -50,9 +50,9 @@ python app.py
 
 ## 👨‍💻 Authors
 
-* Arjun Kishore
 * Soojal Kumar
-* Anjle
+* Arjun Kishore
+* Anjle Kishore
 
 ---
 
@@ -62,11 +62,3 @@ MIT License – free to use and modify.
 
 ```
 
----
-
-✅ One file.  
-✅ Professional.  
-✅ Short enough for GitHub but still impressive for FYP.  
-
-Do you want me to also add **badges** (React Native, Python, MIT License, etc.) at the top for a more GitHub-polished look, or keep it minimal?
-```
