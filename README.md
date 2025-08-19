@@ -1,2 +1,32 @@
-# Nutriscan
-Nutriscan is a food app that helps users make healthier choices. Scan a product's barcode to view ingredients, nutritional grades, and health impact. If a barcode isn’t found, submit details to predict its grade using AI. Features include allergen alerts, healthy alternatives, and expert reviews and choosing healthier options
+# 🥗 NutriScan
+
+NutriScan is an AI-powered food analysis app that helps users make healthier choices.  
+Scan a product’s **barcode** or input **ingredients**, and NutriScan will predict:
+
+- 🟢 **NutriScore** – Nutritional quality  
+- 🟠 **NOVA Score** – Level of food processing  
+- 🌍 **EcoScore** – Environmental impact  
+
+If the product isn’t in the database, the app uses machine learning to generate predictions.
+
+---
+
+## 🚀 Features
+- 📷 **Barcode Scanning** – Quick product recognition  
+- 🧾 **Ingredient Analysis** – Detect allergens, additives, and preservatives  
+- 🤖 **AI Predictions** – NutriScore, NOVA group, and EcoScore grades  
+- 🔄 **Healthy Alternatives** – Suggests better options  
+- 👤 **User Profiles** – Personalized alerts for allergies & health conditions  
+
+---
+
+## 🛠 Tech Stack
+- **Frontend**: React Native (Expo)  
+- **Backend**: Python (Flask/FastAPI)  
+- **Database**: SQLite / PostgreSQL  
+- **Machine Learning**: Scikit-learn, Pandas, NumPy  
+- **API**: Open Food Facts + Custom Models  
+
+---
+
+## 📂 Project Structure
