@@ -2,9 +2,12 @@
 
 NutriScan is an **AI-powered food analysis app** that helps users make healthier choices.  
 Scan a product’s **barcode** or enter its **ingredients** to get instant insights:
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/c90ea73f-50c0-4478-a0d1-e0dfffaba169" width="250" />
+  <img src="https://github.com/user-attachments/assets/b05f2325-6c5e-4867-a22b-507a1817d188" width="250" />
+  <img src="https://github.com/user-attachments/assets/5b86df44-2343-4f52-b654-f19be494f45b" width="250" />
+</p>
 
-![Screenshot_20250820-160436_Expo Go](https://github.com/user-attachments/assets/c90ea73f-50c0-4478-a0d1-e0dfffaba169) ![Screenshot_20250820-160924_Expo Go](https://github.com/user-attachments/assets/b05f2325-6c5e-4867-a22b-507a1817d188)
-![Screenshot_20250820-160941_Expo Go](https://github.com/user-attachments/assets/5b86df44-2343-4f52-b654-f19be494f45b)
 
 
 
